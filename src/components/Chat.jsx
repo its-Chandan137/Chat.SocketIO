@@ -12,7 +12,9 @@ const Chat = ({ currentUser }) => {
   const [recipient, setRecipient] = useState(null);
   const [messages, setMessages] = useState([]);
   const [loadingUsers, setLoadingUsers] = useState(true);
+  const [file, setFile] = useState(null); // Add file state
   const navigate = useNavigate();
+
 
   useEffect(() => {
     const fetchUsers = async () => {
@@ -51,8 +53,6 @@ const Chat = ({ currentUser }) => {
 
   const selectUser = (user) => {
     setRecipient(user);
-    
-    // Fetch previous messages (this remains an API call as historical data retrieval)
     fetchMessages(user._id);
   };
 
@@ -66,11 +66,40 @@ const Chat = ({ currentUser }) => {
     }
   };
 
-  const sendMessage = (text) => {
-    const newMessage = { senderId: currentUser._id, receiverId: recipient._id, text };
+  const sendMessage = async (text) => {
+    let fileUrl = '';
+
+    // Handle file upload
+    if (file) {
+
+      console.log(file, "fileeeee")
+      const formData = new FormData();
+      formData.append('file', file);
+      console.log(formData, "FORM DXATAAAAA")
+
+      for (let pair of formData.entries()) {
+        console.log(pair[0], pair[1]); // This should show the appended file
+      }
+      
+      const response = await fetch('http://localhost:5000/upload', {
+        method: 'POST',
+        body: formData,
+      });
+
+      const data = await response.json();
+      fileUrl = data.fileUrl; // Get the uploaded file URL
+      setFile(null); // Reset the file state after upload
+    }
+
+    const newMessage = { senderId: currentUser._id, receiverId: recipient._id, text, file: fileUrl };
     
     // Emit the message via Socket.IO
-    socket.emit('sendMessage', newMessage);
+    socket.emit('sendMessage', {
+        text, 
+        fileUrl, 
+        senderId: currentUser._id, 
+        receiverId: recipient._id
+    });
 
     // Optimistically update the UI
     setMessages(prevMessages => [...prevMessages, { ...newMessage, timestamp: new Date() }]);
@@ -89,6 +118,10 @@ const Chat = ({ currentUser }) => {
           currentUser={currentUser}
           recipient={recipient}
           sendMessage={sendMessage}
+        />
+        <input
+        type="file"
+        onChange={(e) => setFile(e.target.files[0])}
         />
       </div>
     </div>
