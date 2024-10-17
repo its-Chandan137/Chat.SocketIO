@@ -35,13 +35,20 @@ body {
   background-color: #565656;
 }
 
+.upperWindow{
+  align-items: end;
+  display: flex;
+  justify-content: end;
+}
+
 .chat-window {
-  width: 70%;
+  flex-grow: 1;
   padding: 20px;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
   background-color: #36393f;
+  height: 90%;
 }
 
 .messages {

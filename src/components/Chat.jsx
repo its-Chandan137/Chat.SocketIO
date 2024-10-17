@@ -2,14 +2,16 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Sidebar from './Sidebar';
 import MessageWindow from './MessageWindow';
-import './Chat.css'
+import './Chat.css';
+import { io } from 'socket.io-client'; // Import Socket.IO client
+
+const socket = io('http://localhost:5000'); // Initialize socket connection
 
 const Chat = ({ currentUser }) => {
   const [users, setUsers] = useState([]);
   const [recipient, setRecipient] = useState(null);
   const [messages, setMessages] = useState([]);
   const [loadingUsers, setLoadingUsers] = useState(true);
-  const [loadingMessages, setLoadingMessages] = useState(false);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -31,42 +33,47 @@ const Chat = ({ currentUser }) => {
   useEffect(() => {
     if (!currentUser) {
       navigate('/');  // Redirect to login if no user is logged in
+    } else {
+      socket.emit('join', { userId: currentUser._id }); // Join the room on connection
     }
-  }, [currentUser, navigate]);
+
+    // Listen for incoming messages
+    socket.on('receiveMessage', (message) => {
+      if (message.senderId === recipient?._id || message.senderId === currentUser._id) {
+        setMessages(prevMessages => [...prevMessages, message]);
+      }
+    });
+
+    return () => {
+      socket.off('receiveMessage');
+    };
+  }, [currentUser, navigate, recipient]);
 
   const selectUser = (user) => {
     setRecipient(user);
+    
+    // Fetch previous messages (this remains an API call as historical data retrieval)
     fetchMessages(user._id);
   };
 
   const fetchMessages = async (recipientId) => {
-    setLoadingMessages(true);
     try {
-      const response = await fetch(`http://localhost:5000/api/messages/${recipientId}`);
-      const data = await response.json();
-      setMessages(data.messages);
+      const response = await fetch(`http://localhost:5000/api/messages/${currentUser._id}/${recipientId}`);
+      const messages = await response.json();
+      setMessages(messages);
     } catch (error) {
       console.error('Error fetching messages:', error);
-    } finally {
-      setLoadingMessages(false);
     }
   };
 
-  const sendMessage = async (text) => {
-    const response = await fetch('http://localhost:5000/api/messages', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        sender: currentUser._id,
-        recipient: recipient._id,
-        text,
-      }),
-    });
+  const sendMessage = (text) => {
+    const newMessage = { senderId: currentUser._id, receiverId: recipient._id, text };
+    
+    // Emit the message via Socket.IO
+    socket.emit('sendMessage', newMessage);
 
-    const newMessage = await response.json();
-    setMessages([...messages, newMessage]);
+    // Optimistically update the UI
+    setMessages(prevMessages => [...prevMessages, { ...newMessage, timestamp: new Date() }]);
   };
 
   return (
@@ -76,17 +83,13 @@ const Chat = ({ currentUser }) => {
       ) : (
         <Sidebar users={users} selectUser={selectUser} />
       )}
-      <div style={{ flex: 1 }}>
-        {loadingMessages ? (
-          <p>Loading messages...</p>
-        ) : (
-          <MessageWindow
-            messages={messages}
-            currentUser={currentUser}
-            recipient={recipient}
-            sendMessage={sendMessage}
-          />
-        )}
+      <div className="upperWindow" style={{ flex: 1 }}>
+        <MessageWindow
+          messages={messages}
+          currentUser={currentUser}
+          recipient={recipient}
+          sendMessage={sendMessage}
+        />
       </div>
     </div>
   );

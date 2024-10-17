@@ -1,14 +1,13 @@
 .chat-container {
     display: flex;
     height: 100vh;
-    background-color: #f0f0f0; /* Change background color */
   }
   
   .sidebar {
     width: 300px; /* Width of the sidebar */
     background-color: #fff; /* Sidebar background */
     border-right: 1px solid #ddd;
-    overflow-y: auto; /* Allow scrolling */
+    overflow-y: auto;
   }
   
   .message-window {
