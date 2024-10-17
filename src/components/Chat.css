@@ -1,0 +1,34 @@
+.chat-container {
+    display: flex;
+    height: 100vh;
+    background-color: #f0f0f0; /* Change background color */
+  }
+  
+  .sidebar {
+    width: 300px; /* Width of the sidebar */
+    background-color: #fff; /* Sidebar background */
+    border-right: 1px solid #ddd;
+    overflow-y: auto; /* Allow scrolling */
+  }
+  
+  .message-window {
+    flex: 1; /* Take remaining space */
+    display: flex;
+    flex-direction: column;
+    padding: 20px;
+  }
+  
+  .message {
+    margin: 10px 0;
+  }
+  
+  .message.sent {
+    align-self: flex-end; /* Align sent messages to the right */
+  }
+  
+  .message.received {
+    align-self: flex-start; /* Align received messages to the left */
+  }
+  
+  /* Add additional styles as needed */
+  

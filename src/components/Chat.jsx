@@ -1,69 +1,93 @@
 import React, { useState, useEffect } from 'react';
-import { io } from 'socket.io-client';
+import { useNavigate } from 'react-router-dom';
+import Sidebar from './Sidebar';
+import MessageWindow from './MessageWindow';
+import './Chat.css'
 
-const socket = io('http://localhost:5001'); // Connect to the backend server
-
-const Chat = ({ user }) => {
+const Chat = ({ currentUser }) => {
+  const [users, setUsers] = useState([]);
+  const [recipient, setRecipient] = useState(null);
   const [messages, setMessages] = useState([]);
-  const [messageContent, setMessageContent] = useState('');
-  const [recipient, setRecipient] = useState('');
+  const [loadingUsers, setLoadingUsers] = useState(true);
+  const [loadingMessages, setLoadingMessages] = useState(false);
+  const navigate = useNavigate();
 
   useEffect(() => {
-    // Fetch message history for the current user
-    const fetchMessages = async () => {
-      const response = await fetch(`http://localhost:5001/messages/${user.name}`);
-      const data = await response.json();
-      setMessages(data);
+    const fetchUsers = async () => {
+      try {
+        const response = await fetch('http://localhost:5000/api/users');
+        const data = await response.json();
+        setUsers(data.users.filter(user => user._id !== currentUser._id));
+      } catch (error) {
+        console.error('Error fetching users:', error);
+      } finally {
+        setLoadingUsers(false);
+      }
     };
+    
+    fetchUsers();
+  }, [currentUser]);
 
-    fetchMessages();
+  useEffect(() => {
+    if (!currentUser) {
+      navigate('/');  // Redirect to login if no user is logged in
+    }
+  }, [currentUser, navigate]);
 
-    // Listen for incoming messages
-    socket.on('message', (newMessage) => {
-      setMessages((prevMessages) => [...prevMessages, newMessage]);
-    });
-  }, [user]);
+  const selectUser = (user) => {
+    setRecipient(user);
+    fetchMessages(user._id);
+  };
 
-  const sendMessage = (e) => {
-    e.preventDefault();
-    if (recipient && messageContent) {
-      socket.emit('sendMessage', {
-        sender: user.name,
-        recipient,
-        content: messageContent,
-      });
-      setMessageContent('');
+  const fetchMessages = async (recipientId) => {
+    setLoadingMessages(true);
+    try {
+      const response = await fetch(`http://localhost:5000/api/messages/${recipientId}`);
+      const data = await response.json();
+      setMessages(data.messages);
+    } catch (error) {
+      console.error('Error fetching messages:', error);
+    } finally {
+      setLoadingMessages(false);
     }
   };
 
+  const sendMessage = async (text) => {
+    const response = await fetch('http://localhost:5000/api/messages', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        sender: currentUser._id,
+        recipient: recipient._id,
+        text,
+      }),
+    });
+
+    const newMessage = await response.json();
+    setMessages([...messages, newMessage]);
+  };
+
   return (
-    <div className="chat">
-      <h1>Welcome, {user.name}</h1>
-      <div>
-        <label>Recipient: </label>
-        <input
-          type="text"
-          value={recipient}
-          onChange={(e) => setRecipient(e.target.value)}
-        />
+    <div className="chat-container" style={{ display: 'flex', height: '100vh' }}>
+      {loadingUsers ? (
+        <p>Loading users...</p>
+      ) : (
+        <Sidebar users={users} selectUser={selectUser} />
+      )}
+      <div style={{ flex: 1 }}>
+        {loadingMessages ? (
+          <p>Loading messages...</p>
+        ) : (
+          <MessageWindow
+            messages={messages}
+            currentUser={currentUser}
+            recipient={recipient}
+            sendMessage={sendMessage}
+          />
+        )}
       </div>
-      <div className="messages">
-        {messages.map((msg, index) => (
-          <div key={index}>
-            <strong>{msg.sender}: </strong>
-            {msg.content}
-          </div>
-        ))}
-      </div>
-      <form onSubmit={sendMessage}>
-        <input
-          type="text"
-          placeholder="Type a message"
-          value={messageContent}
-          onChange={(e) => setMessageContent(e.target.value)}
-        />
-        <button type="submit">Send</button>
-      </form>
     </div>
   );
 };
