@@ -86,6 +86,8 @@ const Chat = ({ currentUser }) => {
     setMessages(prevMessages => [...prevMessages, { ...newMessage, timestamp: new Date() }]);
   };
 
+  console.log(users, "users CHAT")
+
   return (
     <div className="chat-container" style={{ display: 'flex', height: '100vh' }}>
       <nav style={{ position: 'relative', padding: '10px' }}> 

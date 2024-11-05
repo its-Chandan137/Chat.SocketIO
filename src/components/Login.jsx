@@ -1,11 +1,19 @@
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';  // Import useNavigate hook
+import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 
 const Login = ({ setUser }) => {
-  console.log('Login', setUser)
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
-  const navigate = useNavigate();  // Initialize navigate
+  const navigate = useNavigate();
+
+  // Check if user is already stored in localStorage
+  useEffect(() => {
+    const storedUser = localStorage.getItem('user');
+    if (storedUser) {
+      setUser(JSON.parse(storedUser));  // Set user from localStorage
+      navigate('/chat');                // Redirect to chat page
+    }
+  }, [setUser, navigate]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -21,9 +29,9 @@ const Login = ({ setUser }) => {
 
       const data = await response.json();
       if (data.user) {
-        console.log(data.user, "DATA USERr")
-        setUser(data.user);  // Set the logged-in user
-        navigate('/chat');   // Redirect to chat page
+        setUser(data.user);                           // Set the logged-in user
+        localStorage.setItem('user', JSON.stringify(data.user)); // Store user in localStorage
+        navigate('/chat');                            // Redirect to chat page
       } else {
         alert('Error: ' + data.message);
       }

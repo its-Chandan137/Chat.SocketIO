@@ -52,6 +52,9 @@ const Sidebar = ({ users = [], selectUser, messages = [], currentUser }) => {
     return userMessages[userMessages.length - 1].text; // Show the text of the last message
   };
 
+  console.log(reorderedUsers, "reorderedUsers")
+  console.log(messages, "messages")
+
   return (
     <div className="sidebar">
       <h2>Users</h2>
