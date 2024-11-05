@@ -42,3 +42,9 @@
     font-weight: bold;
   }
   
+  .selected {
+    background-color: green !important;
+  }
+  
+
+  /* animation part //////////////////////////////// */

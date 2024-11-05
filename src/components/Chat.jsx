@@ -14,11 +14,14 @@ const Chat = ({ currentUser }) => {
   const [loadingUsers, setLoadingUsers] = useState(true);
   const navigate = useNavigate();
 
+  console.log(currentUser, "Current user")
+
   useEffect(() => {
     const fetchUsers = async () => {
       try {
         const response = await fetch('http://localhost:5000/api/users');
         const data = await response.json();
+        // console.log(data.users.filter(user => user._id !== currentUser._id), "RESPONSEds")
         setUsers(data.users.filter(user => user._id !== currentUser._id));
       } catch (error) {
         console.error('Error fetching users:', error);

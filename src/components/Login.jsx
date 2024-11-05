@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';  // Import useNavigate hook
 
 const Login = ({ setUser }) => {
+  console.log('Login', setUser)
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const navigate = useNavigate();  // Initialize navigate
@@ -20,6 +21,7 @@ const Login = ({ setUser }) => {
 
       const data = await response.json();
       if (data.user) {
+        console.log(data.user, "DATA USERr")
         setUser(data.user);  // Set the logged-in user
         navigate('/chat');   // Redirect to chat page
       } else {
